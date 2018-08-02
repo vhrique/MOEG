@@ -1,3 +1,4 @@
+function [ens] = select_ensemble(J, X, ENS)
 %%  Create Ensemble of logistic regressor with MCDM
 %
 %	Creates an ensemble of models using multi-criteria decision making.
@@ -34,9 +35,6 @@
 %   
 %   Outputs:
 %       ens: selected ensemble of models;
-% 
-
-function [ens] = select_ensemble(J, X, ENS)
 
     % Physical programming
     J = (J - min(J)) ./ (max(J) - min(J));

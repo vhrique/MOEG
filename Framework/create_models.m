@@ -1,18 +1,17 @@
-function [all_mdls, best_mdl] = member_generation(data, mop)
-%%  Multi-objective Ensemble Member Generation
+function [models] = create_models(X, eval, data)
+%%  Create a set of trained models
 %
-%	Creates a set of nondominated models using multi-objective
-%	optimisation design.
+%	Creates a set of nondominated trained models.
 %
 %--------------------------------------------------------------------------
 %
 %   Inputs:
+%       X: Decision variables
+%       eval: MOP function callback
 %       data: Data structure
-%       mop: MOP definition structure
 %   
 %   Outputs:
-%       all_mdl: all nondominated trained single models;
-%       best_mdl: best trained single model (selected with MCDM);
+%       models: a set of trained models and selected features;
 %
 %--------------------------------------------------------------------------
 %
@@ -45,35 +44,15 @@ function [all_mdls, best_mdl] = member_generation(data, mop)
 %       <list publications>
 % 
 
-    %% Initialize optimization data
+    %% Output models
     
-    % Initialize optimization parameters
-    spMODEDat = create_spMODEparam(...
-        mop.nobj, mop.nvar, ...
-        @(x)mop.eval(x, data, 'val'), ...
-        mop.lb', mop.ub');
-
-    % Modifications
-    spMODEDat.Alphas = 10;
-    spMODEDat.MAXGEN = 200;
-    spMODEDat.MAXFUNEVALS = 10000;
-    spMODEDat.SeeProgress = 'yes';
-    
-    %% Run Optimization
-    
-    % Optimization algorithm
-    OUT = spMODE(spMODEDat);
-    
-    % Optimization output
-    PFront = OUT.PFront;
-    PSet = OUT.PSet;
-    
-    %% Create a set with all trained classifiers
-    
-    all_mdls = create_models(PSet, mop.eval, data);
-    
-    %% Select best classifier using MCDM
-
-    best_mdl = select_model(PFront, all_mdls);
-    
+    % for each nondominated solution
+    for m = 1 : size(X, 1)
+        
+        % Prepare features
+        models{m}.features = X(m, :) >= 0.5;
+        
+        % Train model
+        [~, ~, models{m}.model] = eval(X(models{m}.features, :), data, 'val');
+    end
 end

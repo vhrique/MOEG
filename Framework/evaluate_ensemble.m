@@ -39,7 +39,7 @@
 %           Size: 5.
 % 
 
-function [J] = f_evaluate_ensemble(ens, data, mode)
+function [J] = evaluate_ensemble(ens, data, mode)
     
     ensemble_size = size(ens, 2);
     

@@ -1,3 +1,4 @@
+function [objectives, decision_var, ens] = mop_ensemble(decision_var, models, data)
 %%  Select members for Ensemble of logistic regressors
 %
 %	Formalizes a MOP for the selection of members for an ensemble.
@@ -28,29 +29,48 @@
 %       <list publications>
 %   
 %   Inputs:
-%       X: Selected learners;
-%       ENS: Ensemble;
-%       data: evaluation data;
+%       decision_var: Decision variables (selected models);
+%       models: Set of nondominated models;
+%       data: Evaluation data;
 %   
 %   Outputs:
-%       J: objectives;
-%       X: Selected learners;
+%       objectives: Objectives;
+%       decision_var: Decision variables;
+%       ens: Ensemble with selected members;
 % 
-
-function [J, X] = mop_ensemble(X, ens, data)
     
-    all_members = 1 : size(X, 2);
+    %% Adjust member selection
     
-    mask = (X >= 0.5);
+    % Adjust decision variables
+    selected_members = (decision_var >= 0.5);
     
-    if sum(mask) == 0
-        selected_members = all_members;
-    else
-        selected_members = all_members(mask);
+    % If no member is selected, use all
+    if sum(selected_members) == 0
+        selected_members = selected_members + 1;
     end
     
-    ENS = ens(selected_members);
+    %% Adjust data
     
-    J = evaluate_ensemble(ENS, data, 'test');
+    % Test set
+    X = data.x_val;
+    Y = data.y_val;
+    
+    %% Model
+    
+    % Create new ensemble
+    ens = custom_ensemble;
+    ens.models = models{selected_members}.mdl;
+    ens.features = models{selected_members}.features;
+    
+    % Predict
+    y = predict(ens, X);
+    
+    %% Compute Objectives
+    
+    % Classification Error
+    objectives(1) = sum(y ~= Y) / length(Y);
+    
+    % Complexity
+    objectives(2) = sum(selected_members);
     
 end

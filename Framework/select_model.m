@@ -1,18 +1,16 @@
-function [all_mdls, best_mdl] = member_generation(data, mop)
-%%  Multi-objective Ensemble Member Generation
+function [best_mdl] = select_model(J, all_mdls)
+%%  Select best single model
 %
-%	Creates a set of nondominated models using multi-objective
-%	optimisation design.
+%	Among a set of nondominated models, the best one is selected with MCDM.
 %
 %--------------------------------------------------------------------------
 %
 %   Inputs:
-%       data: Data structure
-%       mop: MOP definition structure
+%       J: Objectives
+%       all_mdls: Ensemble with all nondominated trained models
 %   
 %   Outputs:
-%       all_mdl: all nondominated trained single models;
-%       best_mdl: best trained single model (selected with MCDM);
+%       best: best trained single model;
 %
 %--------------------------------------------------------------------------
 %
@@ -44,36 +42,14 @@ function [all_mdls, best_mdl] = member_generation(data, mop)
 %   Publications:
 %       <list publications>
 % 
-
-    %% Initialize optimization data
     
-    % Initialize optimization parameters
-    spMODEDat = create_spMODEparam(...
-        mop.nobj, mop.nvar, ...
-        @(x)mop.eval(x, data, 'val'), ...
-        mop.lb', mop.ub');
-
-    % Modifications
-    spMODEDat.Alphas = 10;
-    spMODEDat.MAXGEN = 200;
-    spMODEDat.MAXFUNEVALS = 10000;
-    spMODEDat.SeeProgress = 'yes';
+    %% Select best model using Physical Programming
+    % TODO: improve preference matrix
     
-    %% Run Optimization
+    n_J = (J - min(J)) ./ (max(J) - min(J));
+    matrix = repmat([0.0 0.1 0.2 0.4 0.6], size(J,2), 1);
+    ranking = Rank_PhysicalProgramming(n_J, matrix);
     
-    % Optimization algorithm
-    OUT = spMODE(spMODEDat);
-    
-    % Optimization output
-    PFront = OUT.PFront;
-    PSet = OUT.PSet;
-    
-    %% Create a set with all trained classifiers
-    
-    all_mdls = create_models(PSet, mop.eval, data);
-    
-    %% Select best classifier using MCDM
-
-    best_mdl = select_model(PFront, all_mdls);
+    best_mdl = all_mdls{ranking(1)};
     
 end

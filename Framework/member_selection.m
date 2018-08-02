@@ -1,37 +1,80 @@
-function [all_ens, ensemble] = f_member_selection(ens, data)
+function [all_ens, best_ens] = member_selection(models, data)
+%%  Multi-objective Ensemble Member Selection
+%
+%	Creates a set of nondominated ensembles using multi-objective
+%	optimisation design.
+%
+%--------------------------------------------------------------------------
+%
+%   Inputs:
+%       models: Set of nondominated trained models
+%       data: Data structure
+%   
+%   Outputs:
+%       all_ens: all nondominated trained ensembles models;
+%       best_mdl: best trained ensemble model (selected with MCDM);
+%
+%--------------------------------------------------------------------------
+%
+%   Version Beta - Copyright 2018
+%
+%       For new releases and bug fixing of this Tool Set please send e-mail
+%       to the authors.
+%
+%--------------------------------------------------------------------------
+%
+%   Institution:
+%       Optimization, Modeling and Control Systems Research Group
+%
+%       Graduate Program in Industrial and Systems Engineering - PPGEPS
+%           <https://www.pucpr.br/escola-politecnica/mestrado-doutorado/
+%           engenharia-de-produc%CC%A7a%CC%83o-e-sistemas/>
+%
+%       Pontifical Catholic University of Paraná - Brazil.
+%           <http://en.pucpr.br/>
+%
+%--------------------------------------------------------------------------
+%
+%	Authors:
+%       Victor Henrique Alves Ribeiro
+%           <victor.henrique@pucpr.edu.br>
+%
+%--------------------------------------------------------------------------
+%
+%   Publications:
+%       <list publications>
+% 
+
     %% Initialize optimization data
 
     % Initialize optimization parameters 
-    nvar = size(ens, 2);
-    nobj = 5;
+    nvar = length(models);
+    nobj = 2;
     lb = zeros(1, nvar);
     ub = ones(1, nvar);
-    mop = @(x)f_mop_ensemble(x, ens, data);
-    spMODEDat = f_spMODEparam(nobj, nvar, mop, lb', ub');
+    mop = @(x)mop_ensemble(x, models, data);
+    spMODEDat = create_spMODEparam(nobj, nvar, mop, lb', ub');
 
     % Modifications
     spMODEDat.Alphas = 10;
-    spMODEDat.MAXGEN = 200; % For testing
-    spMODEDat.MAXFUNEVALS = 10000; % For testing
+    spMODEDat.MAXGEN = 200;
+    spMODEDat.MAXFUNEVALS = 10000;
     spMODEDat.SeeProgress = 'yes';
 
     %% Run optimization
 
+    % Optimization algorithm
     OUT = spMODE(spMODEDat);
     
-    %% Select best ensemble with MCDM
+    % Optimization output
+    J = OUT.PFront;
+    X = OUT.PSet;
     
-    ensemble = f_select_ensemble(OUT.PFront(:, [1, 4, 5]), OUT.PSet, ens);
-    all_ens = OUT.PSet;
+    %% Create a set with all trained ensembles
+    
+    all_mdls = create_ensembles(PSet, mop.eval, data);
+    
+    %% Select best classifier using MCDM
 
-%     %% Save data
-% 
-%     filename = sprintf('data/tmp/member_selection.mat');
-%     
-%     save(filename, 'OUT', 'ensemble', 'data');
-%     
-%     filename = sprintf('data/results/member_selection_%s_%s.mat', ...
-%         data.dataset, date);
-%     
-%     save(filename, 'OUT', 'ensemble', 'data');
+    best_mdl = select_model(PFront, all_mdls);
 end
