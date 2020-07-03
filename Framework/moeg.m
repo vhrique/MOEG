@@ -1,4 +1,4 @@
-function [best_ens, best_mdl, all_ens, all_mdl] = MOEG(data, mop)
+function [PFg, PSg, Rg, Ig, PFs, PSs, Rs, Is] = MOEG(data, mop)
 %%  Multi-objective Framework for Ensemble Generation
 %
 %	Creates an ensemble of models using multi-objective optimisation
@@ -8,20 +8,24 @@ function [best_ens, best_mdl, all_ens, all_mdl] = MOEG(data, mop)
 %
 %   Inputs:
 %       data: Data structure
-%       mop: MOP definition structure
+%       mop: MOP definition class
 %       opt: MOEG options structure
 %   
 %   Outputs:
-%       best_ens: best trained ensemble of models;
-%       best_mdl: best trained single model;
-%       all_ens: all trained ensemble of models;
-%       all_mdl: all trained single models;
+%       PFg: Member generation Pareto front approximation;
+%       PSg: Member generation Pareto set approximation;
+%       Rg: Member generation models' ranking;
+%       Ig: Member generation models' index;
+%       PFs: Member selection Pareto front approximation;
+%       PSs: Member selection Pareto set approximation;
+%       Rs: Member selection ensembles' ranking;
+%       Is: Member selection ensembles' index;
 %
 %--------------------------------------------------------------------------
 %
 %   Version Beta - Copyright 2018
 %
-%       For new releases and bug fixing of this Tool Set please send e-mail
+%       For new releases and bug fixing of this toolbox, please send e-mail
 %       to the authors.
 %
 %--------------------------------------------------------------------------
@@ -50,11 +54,20 @@ function [best_ens, best_mdl, all_ens, all_mdl] = MOEG(data, mop)
 
     %% Member generation
     
-    [all_mdl, best_mdl] = member_generation(data, mop);
+    [PFg, PSg] = member_generation(mop, data);
+    
+    %% Create a set with all trained classifiers
+    
+    all_mdls = create_models(PSg, @(x)mop.eval(x, data, 'val'));
     
     %% Member selection
     
-    [all_ens, best_ens] = member_selection(all_mdl, data);
-
+    [PFs, PSs] = member_selection(all_mdls, data);
+    
+    %% Multi-criteria Decision Making:
+    
+    [Rg, Ig] = rank_models(PFg(:, 1:4));
+    [Rs, Is] = rank_models(PFs(:, 1:4));
+    
 end
 

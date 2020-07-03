@@ -1,4 +1,4 @@
-function [models] = create_models(X, eval, data)
+function [models, PF, PS] = create_models(X, eval)
 %%  Create a set of trained models
 %
 %	Creates a set of nondominated trained models.
@@ -8,7 +8,6 @@ function [models] = create_models(X, eval, data)
 %   Inputs:
 %       X: Decision variables
 %       eval: MOP function callback
-%       data: Data structure
 %   
 %   Outputs:
 %       models: a set of trained models and selected features;
@@ -49,10 +48,10 @@ function [models] = create_models(X, eval, data)
     % for each nondominated solution
     for m = 1 : size(X, 1)
         
-        % Prepare features
-        models{m}.features = X(m, :) >= 0.5;
-        
-        % Train model
-        [~, ~, models{m}.model] = eval(X(models{m}.features, :), data, 'val');
+        % Train model and get features
+        [PF(m,:), PS(m,:), ...
+            models{m}.model, ...
+            models{m}.features, ...
+            models{m}.complexity] = eval(X(m, :));
     end
 end

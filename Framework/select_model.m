@@ -1,7 +1,7 @@
-function [best_mdl] = select_model(J, all_mdls)
-%%  Select best single model
+function [ranking] = rank_models(J, X)
+%%  Rank models
 %
-%	Among a set of nondominated models, the best one is selected with MCDM.
+%	Use MCDM to rank predictive models.
 %
 %--------------------------------------------------------------------------
 %
@@ -10,7 +10,7 @@ function [best_mdl] = select_model(J, all_mdls)
 %       all_mdls: Ensemble with all nondominated trained models
 %   
 %   Outputs:
-%       best: best trained single model;
+%       ranking: the ranking of models;
 %
 %--------------------------------------------------------------------------
 %
@@ -49,7 +49,5 @@ function [best_mdl] = select_model(J, all_mdls)
     n_J = (J - min(J)) ./ (max(J) - min(J));
     matrix = repmat([0.0 0.1 0.2 0.4 0.6], size(J,2), 1);
     ranking = Rank_PhysicalProgramming(n_J, matrix);
-    
-    best_mdl = all_mdls{ranking(1)};
     
 end

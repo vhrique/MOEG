@@ -1,4 +1,4 @@
-function [ens] = create_ensembles(X, eval, data)
+function [ens, PF, PS] = create_ensembles(X, eval)
 %%  Create set of ensembles with all models
 %
 %	Creates an ensemble with a set of nondominated models.
@@ -8,7 +8,6 @@ function [ens] = create_ensembles(X, eval, data)
 %   Inputs:
 %       X: Decision variables
 %       eval: MOP function callback
-%       data: Data structure
 %   
 %   Outputs:
 %       best: best trained single model;
@@ -17,7 +16,7 @@ function [ens] = create_ensembles(X, eval, data)
 %
 %   Version Beta - Copyright 2018
 %
-%       For new releases and bug fixing of this Tool Set please send e-mail
+%       For new releases and bug fixing of this toolbox, please send e-mail
 %       to the authors.
 %
 %--------------------------------------------------------------------------
@@ -44,17 +43,15 @@ function [ens] = create_ensembles(X, eval, data)
 %       <list publications>
 % 
 
-    %% Output ensemble
+    %% Output ensembles
     
-    % Create empty ensemble
-    ens = custom_ensemble;
-    
-    % Add models to ensemble
+    % For each nondominated solution
     for m = 1 : size(X, 1)
         
-        [~, ~, model] = eval(X(members(m), :), data, 'val');
+        % Select models
+        selected_models = X(m, :) >= 0.5;
         
-        ens.models{m} = model;
-        ens.features{m} = X(members(m), :) >= 0.5;
+        % Create ensemble
+        [PF(m,:), PS(m,:), ens{m}] = eval(selected_models);
     end
 end

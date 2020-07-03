@@ -1,4 +1,4 @@
-function [all_ens, best_ens] = member_selection(models, data)
+function [PFront, PSet] = member_selection(models, data)
 %%  Multi-objective Ensemble Member Selection
 %
 %	Creates a set of nondominated ensembles using multi-objective
@@ -11,14 +11,14 @@ function [all_ens, best_ens] = member_selection(models, data)
 %       data: Data structure
 %   
 %   Outputs:
-%       all_ens: all nondominated trained ensembles models;
-%       best_mdl: best trained ensemble model (selected with MCDM);
+%       PFront: Pareto front approximation;
+%       PSet: Pareto seto approximation;
 %
 %--------------------------------------------------------------------------
 %
 %   Version Beta - Copyright 2018
 %
-%       For new releases and bug fixing of this Tool Set please send e-mail
+%       For new releases and bug fixing of this toolbox, please send e-mail
 %       to the authors.
 %
 %--------------------------------------------------------------------------
@@ -43,38 +43,31 @@ function [all_ens, best_ens] = member_selection(models, data)
 %
 %   Publications:
 %       <list publications>
-% 
+%
+    
+    %% Multi-object Problem
 
-    %% Initialize optimization data
+    % Problem definition
+    mop = mop_member_selection(length(models), 11);%{'ACC', 'TPR', 'TNR', 'F1'});
+    
+    %% Multi-objective Optimization
+    
+    % Initialize optimization algorithm parameters 
+    spMODEDat = create_spMODEparam(...
+        mop.n_obj, mop.n_var, ...
+        @(x)mop.eval(x, models, data, 'val'), ...
+        mop.lb', mop.ub');
 
-    % Initialize optimization parameters 
-    nvar = length(models);
-    nobj = 2;
-    lb = zeros(1, nvar);
-    ub = ones(1, nvar);
-    mop = @(x)mop_ensemble(x, models, data);
-    spMODEDat = create_spMODEparam(nobj, nvar, mop, lb', ub');
-
-    % Modifications
     spMODEDat.Alphas = 10;
-    spMODEDat.MAXGEN = 200;
+    spMODEDat.MAXGEN = 2;
     spMODEDat.MAXFUNEVALS = 10000;
     spMODEDat.SeeProgress = 'yes';
-
-    %% Run optimization
-
-    % Optimization algorithm
+    
+    % Run optimization
     OUT = spMODE(spMODEDat);
     
-    % Optimization output
-    J = OUT.PFront;
-    X = OUT.PSet;
+    %% Optimization output
     
-    %% Create a set with all trained ensembles
-    
-    all_mdls = create_ensembles(PSet, mop.eval, data);
-    
-    %% Select best classifier using MCDM
-
-    best_mdl = select_model(PFront, all_mdls);
+    PFront = OUT.PFront;
+    PSet = OUT.PSet;
 end
